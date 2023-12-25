@@ -5,7 +5,7 @@ import ImageEditor from "@/components/imageCropper/ImageEditor";
 import ImageUploader from "@/components/imageCropper/ImageUploader";
 import { useState } from "react";
 
-const AvatarEditor: React.FC = () => {
+const ImageCropper: React.FC = () => {
   const [imageSrc, setImageSrc] = useState("");
   const [downloadVisible, setDownloadVisible] = useState(false);
   const [croppedImageUrl, setCroppedImageUrl] = useState("");
@@ -54,4 +54,4 @@ const AvatarEditor: React.FC = () => {
   );
 };
 
-export default AvatarEditor;
+export default ImageCropper;
