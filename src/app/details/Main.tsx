@@ -6,8 +6,8 @@ import Image from "next/image";
 
 export default function Main() {
   return (
-    <div className="w-full text-sm text-white bg-[#09121D]">
-      <main className="max-w-[1520px] mx-auto px-[5.75rem] pt-8 pl-20 pr-16 flex gap-7">
+    <main className="w-full text-sm text-white bg-[#09121D]">
+      <div className="w-full max-w-[1520px] mx-auto px-[5.75rem] pt-8 pl-20 pr-16 flex gap-7">
         <div className="flex flex-col gap-5">
           <div className="relative w-[27.375rem] h-[27.375rem]">
             <Image
@@ -184,8 +184,8 @@ export default function Main() {
             </div>
           </Accordion>
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
 
