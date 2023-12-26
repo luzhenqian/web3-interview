@@ -8,15 +8,16 @@ dotEnvConfig();
 
 const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || "";
 const PROVIDER_URL = process.env.PROVIDER_URL || "";
+const INFURA_KEY = process.env.INFURA_KEY || "";
 
-if (!CONTRACT_ADDRESS || !PROVIDER_URL) {
+if (!CONTRACT_ADDRESS || !PROVIDER_URL || !INFURA_KEY) {
   console.error(
-    "Environment variables CONTRACT_ADDRESS and PROVIDER_URL must be set"
+    "Environment variables CONTRACT_ADDRESS, PROVIDER_URL and INFURA_KEY must be set."
   );
   process.exit(1);
 }
 
-const provider = new ethers.JsonRpcProvider(PROVIDER_URL);
+const provider = new ethers.JsonRpcProvider(`${PROVIDER_URL}${INFURA_KEY}`);
 const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
 
 const app = express();
