@@ -15,6 +15,7 @@ const erc20Contract = new ethers.Contract(
   walletAWithProvider
 );
 
+// 代币分发 1 to N
 async function distributeTokens(
   walletAddresses: WalletAddress[],
   amountPerWallet: bigint
@@ -30,7 +31,7 @@ async function distributeTokens(
         amountPerWallet,
         {
           from: walletA.address,
-          gasLimit: 100000,
+          gasLimit: 10000000,
           gasPrice: 1000000000,
           nonce: nonce++,
         }
@@ -48,6 +49,37 @@ async function distributeTokens(
         nonce: nonce++,
       });
       console.log(`账号 ${address.publicKey} mint 成功！`);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+}
+
+// 代币汇聚 N to 1
+async function aggregation(
+  walletAddresses: WalletAddress[],
+  amountPerWallet: bigint
+) {
+  for (const address of walletAddresses) {
+    try {
+      console.log(
+        `正在将 ${address.publicKey} 的代币汇聚到 ${walletA.address}...`
+      );
+      let nonce = await provider.getTransactionCount(walletA.address);
+      const tx = await erc20Contract.transfer(
+        address.publicKey,
+        amountPerWallet,
+        {
+          from: walletA.address,
+          gasLimit: 10000000,
+          gasPrice: 1000000000,
+          nonce: nonce++,
+        }
+      );
+      await tx.wait();
+      console.log(
+        `已经成功将 ${address.publicKey} 的代币汇聚到 ${walletA.address}！`
+      );
     } catch (error) {
       console.error(error);
     }
@@ -74,5 +106,10 @@ const walletAddresses: WalletAddress[] = [
 ];
 
 distributeTokens(walletAddresses, parseUnits("1.0", 18))
-  .then(() => console.log("所有地址都已经分发完毕！"))
+  .then(async () => {
+    console.log("所有地址都已经分发完毕！");
+
+    console.log("开始汇聚代币到地址：", walletA.address);
+    aggregation(walletAddresses, parseUnits("1.0", 18));
+  })
   .catch((error) => console.error(error));

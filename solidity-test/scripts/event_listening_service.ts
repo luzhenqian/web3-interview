@@ -2,13 +2,19 @@ import { ethers } from "ethers";
 import express from "express";
 import http from "http";
 import WebSocket from "ws";
-import { abi } from "../artifacts/contracts/NoahToken.sol/NoahToken.json";
+import { abi as CONTRACT_ABI } from "../artifacts/contracts/NoahToken.sol/NoahToken.json";
 import { config as dotEnvConfig } from "dotenv";
 dotEnvConfig();
 
-const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS!;
-const CONTRACT_ABI = abi;
-const PROVIDER_URL = process.env.PROVIDER_URL!;
+const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || "";
+const PROVIDER_URL = process.env.PROVIDER_URL || "";
+
+if (!CONTRACT_ADDRESS || !PROVIDER_URL) {
+  console.error(
+    "Environment variables CONTRACT_ADDRESS and PROVIDER_URL must be set"
+  );
+  process.exit(1);
+}
 
 const provider = new ethers.JsonRpcProvider(PROVIDER_URL);
 const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
@@ -17,15 +23,15 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
-const clients: Map<string, WebSocket> = new Map();
+const clients = new Map<string, WebSocket>();
 
-wss.on("connection", (ws: WebSocket) => {
+wss.on("connection", (ws) => {
   ws.on("message", (message: string) => {
     clients.set(message, ws);
   });
 
   ws.on("close", () => {
-    for (const [address, clientWs] of clients) {
+    for (const [address, clientWs] of clients.entries()) {
       if (clientWs === ws) {
         clients.delete(address);
         break;
@@ -34,71 +40,43 @@ wss.on("connection", (ws: WebSocket) => {
   });
 });
 
-contract.on(
-  "Transfer",
-  (from: string, to: string, amount: BigInt, event: Event) => {
-    console.log("Transfer event:", event, from, to, amount.toString());
-
-    const fromClient = clients.get(from);
-    const toClient = clients.get(to);
-
-    if (fromClient) {
-      fromClient.send(
-        JSON.stringify({
-          type: "transfer",
-          from,
-          to,
-          amount: amount.toString(),
-        })
-      );
+function notifyClients(from: string, to: string, amount: string) {
+  [from, to].forEach((address) => {
+    const client = clients.get(address);
+    if (client) {
+      client.send(JSON.stringify({ type: "transfer", from, to, amount }));
     }
+  });
+}
 
-    if (toClient) {
-      toClient.send(
-        JSON.stringify({
-          type: "transfer",
-          from,
-          to,
-          amount: amount.toString(),
-        })
-      );
-    }
+contract.on("Transfer", (from, to, amount, event) => {
+  console.log("Transfer event:", event, from, to, amount.toString());
+  notifyClients(from, to, amount.toString());
+});
+
+app.get("/api/balance/:address", async (req, res) => {
+  const address = req.params.address;
+  const filterTo = contract.filters.Transfer(null, address);
+  const filterFrom = contract.filters.Transfer(address, null);
+
+  try {
+    const toEvents = await contract.queryFilter(filterTo);
+    const fromEvents = await contract.queryFilter(filterFrom);
+
+    let balance = BigInt(0);
+    toEvents.forEach((event: any) => {
+      balance += event.args.value;
+    });
+    fromEvents.forEach((event: any) => {
+      balance -= event.args.value;
+    });
+
+    res.json({ balance: balance.toString() });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
-);
+});
 
-app.get(
-  "/api/balance/:address",
-  async (req: express.Request, res: express.Response) => {
-    // 使用日志获取地址的余额，而不是直接调用合约的balanceOf方法
-    const address = req.params.address;
-
-    const filterTo = contract.filters.Transfer(null, address);
-    const filterFrom = contract.filters.Transfer(address, null);
-
-    try {
-      const toEvents = await contract.queryFilter(filterTo);
-      const fromEvents = await contract.queryFilter(filterFrom);
-
-      // 计算余额
-      let balance: BigInt = BigInt(0);
-      toEvents.forEach((event: any) => {
-        balance = balance + event.args.value;
-      });
-      fromEvents.forEach((event: any) => {
-        // @ts-ignore
-        balance = BigInt(balance - event.args.value);
-      });
-
-      return res.json({
-        balance: balance.toString(),
-      });
-    } catch (error) {
-      return res.status(500).json({ error: (error as Error).message });
-    }
-  }
-);
-
-// 启动服务器
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`);
