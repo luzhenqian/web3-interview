@@ -33,7 +33,7 @@ const ImageDownloader: React.FC<ImageDownloaderProps> = ({
         isVisible ? "opacity-100 max-h-screen" : "opacity-0 max-h-0"
       }`}
     >
-      <div className="relative bg-white shadow-lg rounded-md flex justify-between items-start w-96 h-96">
+      <div className="relative bg-white shadow-lg rounded-md flex justify-between items-start w-96 h-96 border border-gray-200">
         <Button className="absolute left-1 top-1" onClick={downloadImage}>
           下载
         </Button>

@@ -57,8 +57,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         accept="image/jpeg, image/png, image/gif"
         onChange={handleInputChange}
       />
-      <Button>
-        <label htmlFor="fileInput">选择图片</label>
+      <Button as="label" htmlFor="fileInput">
+        选择图片
       </Button>
     </div>
   );

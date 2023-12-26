@@ -20,7 +20,7 @@ const ImageCropper: React.FC = () => {
   return (
     <>
       <div className="h-screen w-screen flex justify-center items-center">
-        <div className="h-[640px] w-[1120px] flex justify-center items-center flex-col p-10 text-center cursor-pointer hover:opacity-90 border border-white rounded-sm border-opacity-25">
+        <div className="h-[640px] w-[1120px] flex justify-center items-center flex-col text-center cursor-pointer hover:opacity-90 border border-black rounded-sm border-opacity-25">
           {imageSrc ? (
             <ImageEditor
               imageSrc={imageSrc}
