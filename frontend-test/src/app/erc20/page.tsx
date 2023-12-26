@@ -2,7 +2,7 @@
 
 import Head from "next/head";
 import { useEffect, useState } from "react";
-import { abi } from "../../../../solidity-test/artifacts/contracts/NoahToken.sol/NoahToken.json";
+import { abi } from "../../contracts/NoahToken.sol/NoahToken.json";
 import { ethers, JsonRpcSigner, BrowserProvider } from "ethers";
 
 declare global {
