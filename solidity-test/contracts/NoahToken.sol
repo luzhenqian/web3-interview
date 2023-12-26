@@ -17,12 +17,12 @@ contract NoahToken is ERC20, Ownable {
     }
 
     function mint(address to, uint256 amount) public payable {
-        require(msg.value >= mintPrice, "Insufficient minting price");
+        require(msg.value >= mintPrice * amount, "Insufficient minting price");
         require(
             mintedAmount + amount <= maxSupply,
             "Minting would exceed max supply"
         );
-        uint256 currentMintedPercent = (amount * 100) / maxSupply;
+        uint256 currentMintedPercent = ((amount * 100) / maxSupply);
         require(
             currentMintedPercent <= 10,
             "Cannot mint more than 10% at once"

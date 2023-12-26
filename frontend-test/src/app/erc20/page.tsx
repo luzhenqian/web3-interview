@@ -11,7 +11,7 @@ declare global {
   }
 }
 
-const contractAddress = "0xc70c6C5D048C7202d0Bed51F073bBc32ac55F068";
+const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
 
 export default function Home() {
   const [provider, setProvider] = useState<BrowserProvider>();
@@ -31,15 +31,16 @@ export default function Home() {
       if (window.ethereum) {
         // 切换到 Ganache 网络
         const localNetwork = {
-          chainId: "0x539", // 1337 的十六进制，也就是 Ganache 的 chainId
-          chainName: "Ganache Local Network",
-          rpcUrls: ["http://localhost:7545"], // Ganache 的 RPC 地址
+          // 31337 的十六进制 0x7a69
+          chainId: "0x7a69",
+          chainName: "Hardhat Network",
+          rpcUrls: ["http://localhost:8545"], // HardHat 默认的 RPC 地址
           nativeCurrency: {
-            name: "Ganache ETH",
+            name: "ETH",
             symbol: "ETH",
             decimals: 18,
           },
-          blockExplorerUrls: ["https://ganache.etherscan.io"],
+          blockExplorerUrls: ["https://etherscan.io/"],
         };
 
         try {
@@ -78,6 +79,13 @@ export default function Home() {
           const ratioBigInt = (mintedAmount * BigInt(100)) / maxSupply;
           const progress = Number(ratioBigInt);
           setProgress(progress);
+          console.table({
+            mintedAmount,
+            maxSupply,
+            owner,
+            currentMintPrice,
+            progress,
+          });
         };
         if (provider) {
           getMintingInfo();
@@ -107,6 +115,11 @@ export default function Home() {
     const contract = new ethers.Contract(contractAddress, abi, newSigner);
     const balance: BigInt = await contract.balanceOf(account);
     setBalance(balance);
+
+    console.table({
+      account,
+      balance,
+    });
   };
 
   const handleMint = async () => {
@@ -141,9 +154,9 @@ export default function Home() {
           ></div>
         </div>
 
-        <p className="my-2">合约地址 : {contractAddress}</p>
-        <p className="my-2">合约拥有者 : {owner}</p>
-        <p className="my-2">当前 Mint 价格 : {currentMintPrice.toString()}</p>
+        <p className="my-2">合约地址：{contractAddress}</p>
+        <p className="my-2">合约拥有者：{owner}</p>
+        <p className="my-2">当前 Mint 价格：{currentMintPrice.toString()}</p>
 
         <p className="mt-2 flex gap-4">
           <span>总发行量 : {maxSupply.toString()}</span>
@@ -152,8 +165,8 @@ export default function Home() {
 
         {walletAddress ? (
           <div>
-            <p className="my-2">余额 : {balance.toString()}</p>
-            <p className="my-2">钱包地址 : {walletAddress}</p>
+            <p className="my-2">余额：{balance.toString()}</p>
+            <p className="my-2">钱包地址：{walletAddress}</p>
             <button
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-2"
               onClick={handleMint}
