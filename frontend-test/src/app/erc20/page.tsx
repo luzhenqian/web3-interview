@@ -129,11 +129,26 @@ export default function Home() {
       return;
     }
 
-    const accounts = await provider.listAccounts();
-    setAccounts(accounts);
-    const account = accounts[0];
-    setWalletAddress(await account.getAddress());
-    getBalance(provider, account);
+    try {
+      let accounts = await provider.listAccounts();
+      if (accounts.length === 0) {
+        // 请求连接
+        await window.ethereum.request({
+          method: "eth_requestAccounts",
+        });
+        accounts = await provider.listAccounts();
+        if (accounts.length === 0) {
+          alert("请安装 MetaMask");
+          return;
+        }
+      }
+      setAccounts(accounts);
+      const account = accounts[0];
+      setWalletAddress(await account.getAddress());
+      getBalance(provider, account);
+    } catch (e) {
+      alert("连接钱包失败，请重试");
+    }
   };
 
   const handleMint = async () => {
