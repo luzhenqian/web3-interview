@@ -11,7 +11,35 @@ declare global {
   }
 }
 
-const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+// local
+// const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+// sepolia
+const contractAddress = "0xeAB2A1e2D28e86a3E2e3B327278801489d463562";
+
+const localNetwork = {
+  // 31337 的十六进制 0x7a69
+  chainId: "0x7a69",
+  chainName: "Hardhat Network",
+  rpcUrls: ["http://localhost:8545"], // HardHat 默认的 RPC 地址
+  nativeCurrency: {
+    name: "ETH",
+    symbol: "ETH",
+    decimals: 18,
+  },
+  blockExplorerUrls: ["https://etherscan.io/"],
+};
+
+const sepoliaNetwork = {
+  chainId: "0xaa36a7",
+  chainName: "Sepolia测试网络",
+  rpcUrls: ["https://sepolia.infura.io/v3/"],
+  nativeCurrency: {
+    name: "ETH",
+    symbol: "ETH",
+    decimals: 18,
+  },
+  blockExplorerUrls: ["https://sepolia.io/"],
+};
 
 export default function Home() {
   const [provider, setProvider] = useState<BrowserProvider>();
@@ -29,24 +57,11 @@ export default function Home() {
   useEffect(() => {
     (async () => {
       if (window.ethereum) {
-        // 切换到 Ganache 网络
-        const localNetwork = {
-          // 31337 的十六进制 0x7a69
-          chainId: "0x7a69",
-          chainName: "Hardhat Network",
-          rpcUrls: ["http://localhost:8545"], // HardHat 默认的 RPC 地址
-          nativeCurrency: {
-            name: "ETH",
-            symbol: "ETH",
-            decimals: 18,
-          },
-          blockExplorerUrls: ["https://etherscan.io/"],
-        };
-
         try {
           await window.ethereum.request({
             method: "wallet_switchEthereumChain",
-            params: [{ chainId: localNetwork.chainId }],
+            // params: [{ chainId: localNetwork.chainId }],
+            params: [{ chainId: sepoliaNetwork.chainId }],
           });
         } catch (switchError: any) {
           // 如果没有添加网络，就添加网络
@@ -54,7 +69,8 @@ export default function Home() {
             try {
               await window.ethereum.request({
                 method: "wallet_addEthereumChain",
-                params: [localNetwork], // 添加的网络信息
+                // params: [localNetwork], // 添加的网络信息
+                params: [sepoliaNetwork], // 添加的网络信息
               });
             } catch (addError) {
               console.error(addError);
@@ -72,6 +88,7 @@ export default function Home() {
           const maxSupply = await contract.maxSupply();
           const owner = await contract.owner();
           const currentMintPrice = await contract.mintPrice();
+          const accounts = await provider.listAccounts();
           setMintedAmount(mintedAmount);
           setMaxSupply(maxSupply);
           setOwner(owner);
@@ -79,13 +96,11 @@ export default function Home() {
           const ratioBigInt = (mintedAmount * BigInt(100)) / maxSupply;
           const progress = Number(ratioBigInt);
           setProgress(progress);
-          console.table({
-            mintedAmount,
-            maxSupply,
-            owner,
-            currentMintPrice,
-            progress,
-          });
+          setAccounts(accounts);
+          if (accounts.length > 0) {
+            setWalletAddress(await accounts[0].getAddress());
+            getBalance(provider, accounts[0]);
+          }
         };
         if (provider) {
           getMintingInfo();
@@ -96,30 +111,29 @@ export default function Home() {
     })();
   }, []);
 
-  const connectWallet = async () => {
-    if (!provider) {
-      alert("请安装 MetaMask");
-      return;
-    }
-    const network = await provider.getNetwork();
-    console.log("当前网络：", network);
-
-    const accounts = await provider.listAccounts();
-    setAccounts(accounts);
-    const account = accounts[0];
-    setWalletAddress(await account.getAddress());
-
+  const getBalance = async (
+    provider: BrowserProvider,
+    account: JsonRpcSigner
+  ) => {
     const newSigner = await provider.getSigner();
     setSigner(newSigner);
 
     const contract = new ethers.Contract(contractAddress, abi, newSigner);
     const balance: BigInt = await contract.balanceOf(account);
     setBalance(balance);
+  };
 
-    console.table({
-      account,
-      balance,
-    });
+  const connectWallet = async () => {
+    if (!provider) {
+      alert("请安装 MetaMask");
+      return;
+    }
+
+    const accounts = await provider.listAccounts();
+    setAccounts(accounts);
+    const account = accounts[0];
+    setWalletAddress(await account.getAddress());
+    getBalance(provider, account);
   };
 
   const handleMint = async () => {
@@ -147,11 +161,15 @@ export default function Home() {
       <main className="flex flex-col items-center justify-center min-h-screen py-2">
         <h1 className="text-4xl font-bold mb-4">NoahToken</h1>
 
-        <div className="max-w-xl w-full bg-gray-200 h-4 rounded-full dark:bg-gray-700">
+        <div className="relative  max-w-xl w-full bg-gray-200 h-6 rounded-full dark:bg-gray-700 p-1">
           <div
             className="bg-blue-600 h-4 rounded-full"
             style={{ width: `${progress}%` }}
           ></div>
+          {/* 居中 */}
+          <span className="absolute inset-0 flex items-center justify-center text-white">
+            {progress}%
+          </span>
         </div>
 
         <p className="my-2">合约地址：{contractAddress}</p>
@@ -164,7 +182,7 @@ export default function Home() {
         </p>
 
         {walletAddress ? (
-          <div>
+          <>
             <p className="my-2">余额：{balance.toString()}</p>
             <p className="my-2">钱包地址：{walletAddress}</p>
             <button
@@ -173,7 +191,7 @@ export default function Home() {
             >
               Mint
             </button>
-          </div>
+          </>
         ) : (
           <button
             className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
